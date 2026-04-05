@@ -1,4 +1,5 @@
-import { auth, db } from "/static/firebase.js";
+
+      import { auth, db } from "/static/firebase.js";
 
 import {
   createUserWithEmailAndPassword,
@@ -25,7 +26,7 @@ function isValidEmail(email) {
   return allowedDomains.includes(domain);
 }
 
-// ================= DEVICE DETECTION (FIXED) =================
+// ================= DEVICE =================
 function getDevice() {
   if (
     navigator.userAgentData?.mobile ||
@@ -35,6 +36,28 @@ function getDevice() {
     return "Mobile";
   }
   return "Laptop";
+}
+
+// ================= LOCATION (FIXED) =================
+async function getLocation() {
+  let location = "Unknown";
+
+  try {
+    const res = await fetch("https://ipwho.is/?t=" + Date.now(), {
+      cache: "no-store"
+    });
+
+    const data = await res.json();
+
+    if (data && data.success && data.country) {
+      location = data.country;
+    }
+
+  } catch (e) {
+    console.log("Location error:", e);
+  }
+
+  return location;
 }
 
 // ================= SIGNUP =================
@@ -77,6 +100,7 @@ async function storeData(failedAttempts) {
   if (!uid || !email) return;
 
   const device = getDevice();
+  const location = await getLocation();   // 🔥 FIXED
 
   const now = new Date();
   const date = now.toISOString().split("T")[0];
@@ -89,13 +113,6 @@ async function storeData(failedAttempts) {
   minutes = minutes < 10 ? "0" + minutes : minutes;
 
   const time = `${hours}:${minutes} ${ampm}`;
-
-  let location = "India";
-  try {
-    const res = await fetch("https://ipwho.is/");
-    const data = await res.json();
-    if (data.success) location = data.country;
-  } catch {}
 
   const ref = doc(db, "activity", uid);
   const snap = await getDoc(ref);
@@ -120,7 +137,7 @@ async function storeData(failedAttempts) {
   });
 }
 
-// ================= LOGIN WITH ML =================
+// ================= LOGIN =================
 window.login = async () => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
@@ -136,18 +153,16 @@ window.login = async () => {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
 
-    // SAVE USER
     localStorage.setItem("uid", user.uid);
     localStorage.setItem("email", user.email);
 
-    // 🔥 STORE DATA ALWAYS
+    // 🔥 STORE ALWAYS
     await storeData(failedAttempts);
 
-    // RESET FAILED ATTEMPTS
     localStorage.setItem("failedAttempts", 0);
 
-    // ================= ML DATA =================
     const device = getDevice();
+    const location = await getLocation();   // 🔥 FIXED
 
     const now = new Date();
     let hours = now.getHours();
@@ -158,17 +173,8 @@ window.login = async () => {
     minutes = minutes < 10 ? "0" + minutes : minutes;
 
     const time = `${hours}:${minutes} ${ampm}`;
-
-    let location = "India";
-    try {
-      const res = await fetch("https://ipwho.is/");
-      const data = await res.json();
-      if (data.success) location = data.country;
-    } catch {}
-
     const loginCount = 1;
 
-    // ================= CALL ML =================
     const response = await fetch("/predict", {
       method: "POST",
       headers: {
@@ -185,7 +191,6 @@ window.login = async () => {
 
     const result = await response.json();
 
-    // ================= DECISION =================
     if (result.prediction === 0) {
       window.location = "/home";
     } else {
@@ -195,7 +200,6 @@ window.login = async () => {
       localStorage.setItem("otpTime", Date.now().toString());
 
       alert("OTP: " + otp);
-
       window.location = "/otp";
     }
 
