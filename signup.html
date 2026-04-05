@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login</title>
+<title>Signup</title>
 
 <style>
 body {background:#0f172a;color:white;text-align:center;font-family:Arial;}
@@ -14,15 +14,14 @@ button {padding:10px 20px;margin:10px;border:none;background:#22c55e;color:white
 <body>
 
 <div class="box">
-<h2>Login</h2>
+<h2>Sign Up</h2>
 
+<input id="username" placeholder="Username"><br>
 <input id="email" placeholder="Email"><br>
 <input id="password" type="password" placeholder="Password"><br>
 
-<button onclick="login()">Login</button>
-
-<p>Don't have account?</p>
-<button onclick="goSignup()">Sign Up</button>
+<button onclick="signup()">Create Account</button>
+<button onclick="goLogin()">Back</button>
 
 <p id="msg"></p>
 </div>
