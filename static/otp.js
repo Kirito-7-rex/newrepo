@@ -37,6 +37,9 @@ function resendOTP() {
   localStorage.setItem("otp", newOtp);
   localStorage.setItem("otpTime", Date.now());
 
+  // 🔥 FIX: show OTP popup
+  alert("New OTP: " + newOtp);
+
   document.getElementById("msg").innerText = "New OTP sent!";
 }
 
