@@ -4,27 +4,101 @@
 <title>Home</title>
 
 <style>
-body {background:#0f172a;color:white;text-align:center;font-family:Arial;}
-.box {background:#1e293b;padding:20px;border-radius:10px;margin-top:50px;display:inline-block;}
-button{padding:10px;border:none;background:#22c55e;color:white;border-radius:5px;}
+body {
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+
+.box {
+  background:#1e293b;
+  padding:20px;
+  border-radius:10px;
+  margin-top:50px;
+  display:inline-block;
+  width:300px;
+}
+
+.logs {
+  text-align:left;
+  margin-top:15px;
+  background:#0f172a;
+  padding:10px;
+  border-radius:8px;
+}
+
+.logs p {
+  margin:6px 0;
+  font-size:14px;
+}
+
+button {
+  padding:10px;
+  border:none;
+  background:#22c55e;
+  color:white;
+  border-radius:5px;
+  margin-top:15px;
+}
 </style>
 
 </head>
 <body>
 
 <div class="box">
+
 <h2 id="welcome"></h2>
 
-<button onclick="logout()">Logout</button>
+<!-- 🔥 USER LOGS -->
+<h3>User Logs</h3>
+
+<div class="logs" id="userLogs">
+  Loading...
 </div>
 
-<script>
+<button onclick="logout()">Logout</button>
+
+</div>
+
+<script type="module">
+import { db } from "/static/firebase.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
 const email = localStorage.getItem("email");
+const uid = localStorage.getItem("uid");
+
+// Welcome
 document.getElementById("welcome").innerText = "Welcome " + email;
 
+// 🔥 LOAD USER DATA
+async function loadUserData() {
+  if (!uid) return;
+
+  const ref = doc(db, "activity", uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const data = snap.data();
+
+    document.getElementById("userLogs").innerHTML = `
+      <p>📱 <b>Device:</b> ${data.device}</p>
+      <p>🌍 <b>Location:</b> ${data.location}</p>
+      <p>🕒 <b>Time:</b> ${data.time}</p>
+      <p>📊 <b>Login Count:</b> ${data.loginCount}</p>
+      <p>❗ <b>Failed Attempts:</b> ${data.failedAttempts}</p>
+    `;
+  } else {
+    document.getElementById("userLogs").innerText = "No data found";
+  }
+}
+
+loadUserData();
+
+// Logout
 function logout() {
   localStorage.clear();
-  window.location = "/";  // ✅ FIXED
+  window.location = "/";
 }
 </script>
 
