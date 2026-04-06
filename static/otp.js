@@ -1,5 +1,5 @@
 // ================= VERIFY OTP =================
-async function verifyOTP() {
+window.verifyOTP = async function () {
   const entered = document.getElementById("otpInput").value.trim();
 
   const otp = localStorage.getItem("otp");
@@ -26,7 +26,19 @@ async function verifyOTP() {
   } else {
     document.getElementById("msg").innerText = "Wrong OTP ❌";
   }
-}
+};
+
+
+// ================= RESEND OTP (MISSING FUNCTION ADDED) =================
+window.resendOTP = function () {
+  const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  localStorage.setItem("otp", newOtp);
+  localStorage.setItem("otpTime", Date.now());
+
+  document.getElementById("msg").innerText = "New OTP sent!";
+};
+
 
 // ================= LOCATION =================
 async function getLocation() {
@@ -49,6 +61,7 @@ async function getLocation() {
 
   return "India";
 }
+
 
 // ================= STORE DATA =================
 async function storeData(failedAttempts) {
