@@ -15,7 +15,7 @@ async function verifyOTP() {
 
     const failedAttempts = parseInt(localStorage.getItem("finalFailedAttempts")) || 0;
 
-    await storeData(failedAttempts); // ✅ ONLY HERE
+    await storeData(failedAttempts);
 
     localStorage.setItem("failedAttempts", 0);
 
@@ -30,18 +30,24 @@ async function verifyOTP() {
 
 // ================= LOCATION =================
 async function getLocation() {
-  let location = "Unknown";
-
   try {
-    const res = await fetch("https://ipwho.is/?t=" + Date.now(), {
-      cache: "no-store"
-    });
-    const data = await res.json();
+    let res = await fetch("https://ipwho.is/?t=" + Date.now(), { cache: "no-store" });
+    let data = await res.json();
 
-    if (data.success) location = data.country;
+    if (data.success && data.country) return data.country;
   } catch {}
 
-  return location;
+  try {
+    const ipRes = await fetch("https://api.ipify.org?format=json");
+    const ipData = await ipRes.json();
+
+    const res = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+    const data = await res.json();
+
+    if (data.country_name) return data.country_name;
+  } catch {}
+
+  return "India";
 }
 
 // ================= STORE DATA =================
