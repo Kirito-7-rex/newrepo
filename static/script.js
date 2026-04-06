@@ -5,6 +5,9 @@ import {
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
+// 🔥 ADD THIS IMPORT (NEW)
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
 // ROUTES
 window.goSignup = () => window.location = "/signup";
 window.goLogin = () => window.location = "/";
@@ -69,9 +72,18 @@ window.signup = async () => {
   }
 
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const user = await createUserWithEmailAndPassword(auth, email, password);
+
+    // 🔥 ADD THIS (SAVE USERNAME)
+    const { db } = await import("/static/firebase.js");
+    await setDoc(doc(db, "users", user.user.uid), {
+      username,
+      email
+    });
+
     alert("Account created successfully!");
     window.location = "/";
+
   } catch (e) {
     document.getElementById("msg").innerText = e.message;
   }
@@ -127,7 +139,6 @@ window.login = async () => {
 
     if (result.prediction === 0) {
 
-      // 🔥 FIX ADDED HERE (ONLY CHANGE)
       await storeData(failedAttempts);
 
       localStorage.setItem("failedAttempts", 0);
