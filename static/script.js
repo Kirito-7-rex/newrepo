@@ -38,7 +38,6 @@ async function getLocation() {
   try {
     let res = await fetch("https://ipwho.is/?t=" + Date.now(), { cache: "no-store" });
     let data = await res.json();
-
     if (data.success && data.country) return data.country;
   } catch {}
 
@@ -137,24 +136,37 @@ window.login = async () => {
       window.location = "/home";
 
     } else {
-      // 🔥 OTP FLOW (EMAIL BASED)
+      // 🔐 OTP FLOW
 
       localStorage.setItem("finalFailedAttempts", failedAttempts);
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
       localStorage.setItem("otp", otp);
       localStorage.setItem("otpTime", Date.now());
 
-      // ✅ SEND OTP TO EMAIL (NEW)
-      await fetch("/send-otp", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          email: userCred.user.email,
-          otp: otp
-        })
-      });
+      // ✅ SEND OTP (FIXED)
+      try {
+        const res = await fetch("/send-otp", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            email: userCred.user.email,
+            otp: otp
+          })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          document.getElementById("msg").innerText = "Failed to send OTP ❌";
+          return;
+        }
+
+      } catch (err) {
+        console.error("OTP Error:", err);
+        document.getElementById("msg").innerText = "Server error ❌";
+        return;
+      }
 
       window.location = "/otp";
     }
