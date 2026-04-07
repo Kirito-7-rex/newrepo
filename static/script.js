@@ -7,6 +7,9 @@ import {
 
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
+// ✅ CHANGE THIS TO YOUR BACKEND URL
+const BASE_URL = "https://newrepo-md96.onrender.com";
+
 // ROUTES
 window.goSignup = () => window.location = "/signup";
 window.goLogin = () => window.location = "/";
@@ -33,24 +36,8 @@ function getDevice() {
   return "Laptop";
 }
 
-// LOCATION
+// ✅ SAFE LOCATION (NO ERRORS)
 async function getLocation() {
-  try {
-    let res = await fetch("https://ipwho.is/?t=" + Date.now(), { cache: "no-store" });
-    let data = await res.json();
-    if (data.success && data.country) return data.country;
-  } catch {}
-
-  try {
-    const ipRes = await fetch("https://api.ipify.org?format=json");
-    const ipData = await ipRes.json();
-
-    const res = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
-    const data = await res.json();
-
-    if (data.country_name) return data.country_name;
-  } catch {}
-
   return "India";
 }
 
@@ -115,7 +102,7 @@ window.login = async () => {
     }
 
     // ML CALL
-    const response = await fetch("/predict", {
+    const response = await fetch(BASE_URL + "/predict", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -144,9 +131,8 @@ window.login = async () => {
       localStorage.setItem("otp", otp);
       localStorage.setItem("otpTime", Date.now());
 
-      // ✅ SEND OTP (FIXED)
       try {
-        const res = await fetch("/send-otp", {
+        const res = await fetch(BASE_URL + "/send-otp", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
@@ -154,6 +140,11 @@ window.login = async () => {
             otp: otp
           })
         });
+
+        if (!res.ok) {
+          document.getElementById("msg").innerText = "OTP API not found ❌";
+          return;
+        }
 
         const data = await res.json();
 
@@ -171,12 +162,20 @@ window.login = async () => {
       window.location = "/otp";
     }
 
-  } catch {
-    failedAttempts++;
-    localStorage.setItem("failedAttempts", failedAttempts);
+  } catch (error) {
+    console.error("Login Error:", error);
 
-    document.getElementById("msg").innerText =
-      "Login failed ❌ (" + failedAttempts + ")";
+    let msg = "Login failed ❌";
+
+    if (error.code === "auth/user-not-found") {
+      msg = "User not found ❌";
+    } else if (error.code === "auth/wrong-password") {
+      msg = "Wrong password ❌";
+    } else if (error.code === "auth/invalid-email") {
+      msg = "Invalid email ❌";
+    }
+
+    document.getElementById("msg").innerText = msg;
   }
 };
 
@@ -194,10 +193,7 @@ async function storeData(failedAttempts) {
   const date = now.toISOString().split("T")[0];
   const time = now.toLocaleTimeString();
 
-  const device = /Android|iPhone/i.test(navigator.userAgent)
-    ? "Mobile"
-    : "Laptop";
-
+  const device = getDevice();
   const location = await getLocation();
 
   const ref = doc(db, "activity", uid);
