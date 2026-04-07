@@ -29,20 +29,27 @@ async function verifyOTP() {
   }
 }
 
-
 // ================= RESEND OTP =================
-function resendOTP() {
+async function resendOTP() {
   const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
   localStorage.setItem("otp", newOtp);
   localStorage.setItem("otpTime", Date.now());
 
-  // 🔥 FIX: show OTP popup
-  alert("New OTP: " + newOtp);
+  const email = localStorage.getItem("email");
 
-  document.getElementById("msg").innerText = "New OTP sent!";
+  // ✅ SEND EMAIL (NEW)
+  await fetch("/send-otp", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      email: email,
+      otp: newOtp
+    })
+  });
+
+  document.getElementById("msg").innerText = "New OTP sent to email!";
 }
-
 
 // ================= LOCATION =================
 async function getLocation() {
@@ -64,7 +71,6 @@ async function getLocation() {
 
   return "India";
 }
-
 
 // ================= STORE DATA =================
 async function storeData(failedAttempts) {
@@ -105,7 +111,6 @@ async function storeData(failedAttempts) {
   });
 }
 
-
-// ================= EVENT LISTENERS =================
+// ================= EVENTS =================
 document.getElementById("verifyBtn").addEventListener("click", verifyOTP);
 document.getElementById("resendBtn").addEventListener("click", resendOTP);
