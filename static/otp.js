@@ -1,3 +1,6 @@
+// ✅ BACKEND URL (IMPORTANT)
+const BASE_URL = "https://newrepo-md96.onrender.com";
+
 // ================= VERIFY OTP =================
 async function verifyOTP() {
   const entered = document.getElementById("otpInput").value.trim();
@@ -15,7 +18,7 @@ async function verifyOTP() {
     return;
   }
 
-  // 🔒 OTP EXPIRY (2 minutes)
+  // 🔒 OTP EXPIRY (2 min)
   const now = Date.now();
   const diff = now - parseInt(time);
 
@@ -34,7 +37,7 @@ async function verifyOTP() {
 
     localStorage.setItem("failedAttempts", 0);
 
-    // 🔥 Clear OTP after success
+    // clear OTP
     localStorage.removeItem("otp");
     localStorage.removeItem("otpTime");
 
@@ -62,7 +65,7 @@ async function resendOTP() {
   localStorage.setItem("otpTime", Date.now());
 
   try {
-    const res = await fetch("/send-otp", {
+    const res = await fetch(BASE_URL + "/send-otp", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -70,6 +73,11 @@ async function resendOTP() {
         otp: newOtp
       })
     });
+
+    if (!res.ok) {
+      document.getElementById("msg").innerText = "OTP API error ❌";
+      return;
+    }
 
     const data = await res.json();
 
@@ -86,25 +94,9 @@ async function resendOTP() {
   }
 }
 
-// ================= LOCATION =================
+// ================= SAFE LOCATION =================
 async function getLocation() {
-  try {
-    let res = await fetch("https://ipwho.is/?t=" + Date.now(), { cache: "no-store" });
-    let data = await res.json();
-    if (data.success && data.country) return data.country;
-  } catch {}
-
-  try {
-    const ipRes = await fetch("https://api.ipify.org?format=json");
-    const ipData = await ipRes.json();
-
-    const res = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
-    const data = await res.json();
-
-    if (data.country_name) return data.country_name;
-  } catch {}
-
-  return "India";
+  return "India"; // avoid API errors
 }
 
 // ================= STORE DATA =================
