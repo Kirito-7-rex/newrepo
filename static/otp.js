@@ -2,11 +2,25 @@
 async function verifyOTP() {
   const entered = document.getElementById("otpInput").value.trim();
 
+  if (!entered) {
+    document.getElementById("msg").innerText = "Enter OTP ❗";
+    return;
+  }
+
   const otp = localStorage.getItem("otp");
   const time = localStorage.getItem("otpTime");
 
   if (!otp || !time) {
-    document.getElementById("msg").innerText = "OTP not found.";
+    document.getElementById("msg").innerText = "OTP not found ❌";
+    return;
+  }
+
+  // 🔒 OTP EXPIRY (2 minutes)
+  const now = Date.now();
+  const diff = now - parseInt(time);
+
+  if (diff > 2 * 60 * 1000) {
+    document.getElementById("msg").innerText = "OTP expired ⏳";
     return;
   }
 
@@ -20,6 +34,10 @@ async function verifyOTP() {
 
     localStorage.setItem("failedAttempts", 0);
 
+    // 🔥 Clear OTP after success
+    localStorage.removeItem("otp");
+    localStorage.removeItem("otpTime");
+
     setTimeout(() => {
       window.location = "/home";
     }, 1000);
@@ -31,24 +49,41 @@ async function verifyOTP() {
 
 // ================= RESEND OTP =================
 async function resendOTP() {
+  const email = localStorage.getItem("email");
+
+  if (!email) {
+    document.getElementById("msg").innerText = "Email not found ❌";
+    return;
+  }
+
   const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
   localStorage.setItem("otp", newOtp);
   localStorage.setItem("otpTime", Date.now());
 
-  const email = localStorage.getItem("email");
+  try {
+    const res = await fetch("/send-otp", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        email: email,
+        otp: newOtp
+      })
+    });
 
-  // ✅ SEND EMAIL (NEW)
-  await fetch("/send-otp", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      email: email,
-      otp: newOtp
-    })
-  });
+    const data = await res.json();
 
-  document.getElementById("msg").innerText = "New OTP sent to email!";
+    if (!data.success) {
+      document.getElementById("msg").innerText = "Failed to resend OTP ❌";
+      return;
+    }
+
+    document.getElementById("msg").innerText = "New OTP sent to email! 📧";
+
+  } catch (err) {
+    console.error("Resend OTP error:", err);
+    document.getElementById("msg").innerText = "Server error ❌";
+  }
 }
 
 // ================= LOCATION =================
