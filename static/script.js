@@ -5,7 +5,6 @@ import {
   signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-// 🔥 ADD THIS IMPORT (NEW)
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 // ROUTES
@@ -34,16 +33,14 @@ function getDevice() {
   return "Laptop";
 }
 
-// 🔥 LOCATION
+// LOCATION
 async function getLocation() {
   try {
     let res = await fetch("https://ipwho.is/?t=" + Date.now(), { cache: "no-store" });
     let data = await res.json();
 
     if (data.success && data.country) return data.country;
-  } catch (e) {
-    console.log("Primary API failed:", e);
-  }
+  } catch {}
 
   try {
     const ipRes = await fetch("https://api.ipify.org?format=json");
@@ -53,9 +50,7 @@ async function getLocation() {
     const data = await res.json();
 
     if (data.country_name) return data.country_name;
-  } catch (e) {
-    console.log("Fallback failed:", e);
-  }
+  } catch {}
 
   return "India";
 }
@@ -74,7 +69,6 @@ window.signup = async () => {
   try {
     const user = await createUserWithEmailAndPassword(auth, email, password);
 
-    // 🔥 ADD THIS (SAVE USERNAME)
     const { db } = await import("/static/firebase.js");
     await setDoc(doc(db, "users", user.user.uid), {
       username,
@@ -108,7 +102,6 @@ window.login = async () => {
     const now = new Date();
     const time = now.toLocaleTimeString();
 
-    // 🔥 GET REAL LOGIN COUNT
     const { db } = await import("/static/firebase.js");
     const { doc, getDoc } = await import(
       "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js"
@@ -140,18 +133,29 @@ window.login = async () => {
     if (result.prediction === 0) {
 
       await storeData(failedAttempts);
-
       localStorage.setItem("failedAttempts", 0);
       window.location = "/home";
 
     } else {
+      // 🔥 OTP FLOW (EMAIL BASED)
+
       localStorage.setItem("finalFailedAttempts", failedAttempts);
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
       localStorage.setItem("otp", otp);
       localStorage.setItem("otpTime", Date.now());
 
-      alert("OTP: " + otp);
+      // ✅ SEND OTP TO EMAIL (NEW)
+      await fetch("/send-otp", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: userCred.user.email,
+          otp: otp
+        })
+      });
+
       window.location = "/otp";
     }
 
@@ -201,4 +205,4 @@ async function storeData(failedAttempts) {
     loginCount,
     failedAttempts
   });
-    }
+}
